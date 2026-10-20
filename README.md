@@ -14,27 +14,13 @@ Unlike simple scripts, OmniRoute implements a **Control Plane** architecture tha
 
 ## 🚀 Enterprise Feature Set (Real-World Solutions)
 
-This project is built to solve specific, high-impact production issues that a Senior DevOps Engineer faces daily:
-
-### 1️⃣ Autonomous Incident Triage (Solving Alert Fatigue)
-- **The Problem:** On-call engineers receive hundreds of alerts, many of which are noise or recurring.
-- **The Solution:** OmniRoute automatically intercepts alerts and performs the "First Response." It aggregates logs, checks metrics, and classifies the incident *before* a human is notified.
-- **Impact:** Reduces noise and ensures that when a human is paged, they have a full diagnostic report ready.
-
-### 2️⃣ Runbook-Grounded Remediation (Solving AI Hallucinations)
-- **The Problem:** LLMs can suggest dangerous or incorrect commands if left unchecked.
-- **The Solution:** Using **ChromaDB RAG**, the agent is strictly grounded in a library of human-verified runbooks. If a fix isn't in the runbook, the agent flags it as "Risky."
-- **Impact:** Zero-trust AI execution. Only verified, safe procedures are suggested.
-
-### 3️⃣ Immutable GitOps Workflow (Solving Configuration Drift)
-- **The Problem:** Manual `kubectl edit` changes lead to "drift," where the cluster state differs from the Git repo.
-- **The Solution:** The agent **never** modifies the cluster directly. It creates a Git commit $\rightarrow$ triggers **ArgoCD** $\rightarrow$ ArgoCD syncs the cluster.
-- **Impact:** 100% traceability and instant rollback capability for every AI action.
-
-### 4️⃣ Human-in-the-Loop (HITL) Control Plane (Solving Production Risk)
-- **The Problem:** Giving an AI "Write" access to production is a massive security risk.
-- **The Solution:** A dedicated **FastAPI-powered Dashboard** where an engineer must explicitly approve an AI's suggested fix.
-- **Impact:** Combines AI speed with human judgment, ensuring no unauthorized changes reach production.
+| Real-World Issue | OmniRoute Solution | Technical Implementation |
+| :--- | :--- | :--- |
+| **Alert Fatigue** | **Autonomous Diagnosis** | AI Agent automatically aggregates logs and metrics *before* paging a human. |
+| **Human Error in Fixes** | **Runbook Grounding (RAG)** | Fixes are retrieved from verified human-written runbooks, not LLM hallucinations. |
+| **Production Risk** | **Human-in-the-Loop (HITL)** | A professional UI requires an engineer to "Approve" any fix before it is applied. |
+| **Configuration Drift** | **GitOps Remediation** | No `kubectl edit`. All fixes are committed to Git and synced via ArgoCD. |
+| **Lack of Accountability** | **Immutable Audit Trail** | Every decision, from diagnosis to approval, is logged in a tamper-proof audit trail. |
 
 ---
 
@@ -78,40 +64,101 @@ graph TD
 
 ---
 
-## 🚀 Professional Deployment Blueprint
+## 🛠️ COMPLETE STEP-BY-STEP SETUP GUIDE
 
-### 1️⃣ Infrastructure Foundation
+Follow these steps exactly to deploy the project from scratch.
+
+### 1️⃣ Phase 1: Prerequisites & Tools
+Ensure you have the following installed:
+- **Docker Desktop** (Required for Kind/Minikube)
+- **Kind** (`brew install kind`) - used to create a local Kubernetes cluster.
+- **kubectl** (`brew install kubernetes-cli`) - the CLI for controlling K8s.
+- **Python 3.10+**
+- **OpenAI API Key** - Needed for the AI's reasoning capabilities.
+
+### 2️⃣ Phase 2: Kubernetes Infrastructure Setup
+We need to provision the cluster and seed it with "failure scenarios" so we have something to fix.
+
 ```bash
-# Provision Cluster
-kind create cluster --name omniroute-prod
+# A. Create the cluster
+kind create cluster --name omniroute-cluster
 
-# Apply Security Guardrails (Least Privilege RBAC)
+# B. Apply Security RBAC
+# This gives the AI Agent the correct, limited permissions to read logs and patch deployments
 kubectl apply -f infra/rbac/agent-rbac.yaml
 
-# Seed Production Failure Scenarios
+# C. Seed the Chaos Failures
+# This creates pods that are intentionally crashing or running out of memory
 kubectl apply -f infra/chaos/failure-seeds.yaml
+
+# D. Verify the "Broken" state
+kubectl get pods
+# You should see pods in 'CrashLoopBackOff' or 'OOMKilled' status.
 ```
 
-### 2️⃣ Backend Engine Setup
+### 3️⃣ Phase 3: Backend Control Plane Installation
+The backend handles the API and the LangGraph AI Agent logic.
+
 ```bash
-# Setup Environment
-python3 -m venv venv && source venv/bin/activate
+# A. Clone and enter the repository
+git clone https://github.com/Ayush-Singh986/GitOps-Driven-Self-Healing-Infrastructure.git
+cd GitOps-Driven-Self-Healing-Infrastructure
+
+# B. Set up a virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# C. Install all professional dependencies
 pip install -r requirements.txt
 
-# Initialize Control Plane
-export OPENAI_API_KEY='your-key'
+# D. Set your API Key
+export OPENAI_API_KEY='your-openai-api-key-here'
+
+# E. Start the Control Plane Server
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
+*The server is now live at `http://localhost:8000`.*
 
-### 3️⃣ Dashboard Launch
+### 4️⃣ Phase 4: Launching the Dark-Ops UI
+The UI allows you to interact with the AI and approve its suggestions.
+
 ```bash
-# Launch the Cyber-Ops UI
+# Open the professional dashboard in your browser
 open frontend/index.html
 ```
 
-### 4️⃣ End-to-End Validation
-1. **Trigger:** Send alert to API $\rightarrow$ `POST /trigger-diagnosis`
-2. **Triage:** AI Agent fetches logs $\rightarrow$ RAG matches runbook $\rightarrow$ Proposes Fix.
-3. **Approval:** Open Dashboard $\rightarrow$ Review Fix $\rightarrow$ Click **[Approve]**.
-4. **Healing:** ArgoCD syncs Git commit $\rightarrow$ K8s Pod heals.
-5. **Audit:** Review `agent_audit.log` for full traceability.
+### 5️⃣ Phase 5: End-to-End Execution (The Demo Loop)
+Test the system by triggering a diagnosis and approving the fix.
+
+**Step A: Trigger the AI to diagnose a failure**
+```bash
+curl -X POST "http://localhost:8000/trigger-diagnosis" \
+     -H "Content-Type: application/json" \
+     -d '{"alert_id": "alert-oom-001"}'
+```
+
+**Step B: Review in the UI**
+1. Go to your browser (`frontend/index.html`).
+2. Look at the **Incident Feed**. You will see the AI has analyzed the pod and suggested a fix (e.g., "Increase memory to 256Mi").
+3. Click the **[Approve Fix]** button.
+
+**Step C: Trigger Approval via API (Alternative to UI)**
+If you prefer the CLI, use the request ID from the trigger step:
+```bash
+curl -X POST "http://localhost:8000/approve-remediation" \
+     -H "Content-Type: application/json" \
+     -d '{"request_id": "YOUR_REQUEST_ID", "action": "approve"}'
+```
+
+**Step D: Verify the Healing**
+Check your cluster to see the pod returning to a healthy state:
+```bash
+kubectl get pods
+```
+
+### 6️⃣ Phase 6: Audit & Verification
+Check the audit trail to see the full decision-making process of the AI:
+```bash
+cat agent_audit.log
+```
+This log proves the agent followed the runbook and waited for human approval.
