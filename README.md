@@ -20,63 +20,100 @@ Imagine a Kubernetes cluster (the system that runs your apps) as a large city. S
 
 ---
 
-## 🛠️ Step-by-Step Setup Guide
+## 🛠️ Professional Step-by-Step Setup Guide
 
-### 1. Prerequisites
-You will need:
-- **Docker** installed.
-- **Kind** or **Minikube** (to run Kubernetes locally).
-- **kubectl** (the Kubernetes command-line tool).
-- **Python 3.10+** installed.
-- **OpenAI API Key** (for the Agent's brain).
+This guide will take you from a blank machine to a fully functioning AIOps Control Plane.
 
-### 2. Infrastructure Setup
-First, create your cluster and apply the security and chaos manifests:
+### 1️⃣ Phase 1: Environment Prerequisites
+Ensure you have the following installed on your machine:
+- **Docker Desktop** (or Docker Engine)
+- **Kind** (`brew install kind`) or **Minikube**
+- **kubectl** (`brew install kubernetes-cli`)
+- **Python 3.10+**
+- **OpenAI API Key** (Get one at [platform.openai.com](https://platform.openai.com))
+
+### 2️⃣ Phase 2: Infrastructure Deployment
+We need to create a "broken" cluster for the AI to heal.
 
 ```bash
-# 1. Create a cluster
+# 1. Create a local Kubernetes cluster
 kind create cluster --name self-healing-cluster
 
-# 2. Apply RBAC (Security Guardrails)
+# 2. Install the AI Agent's Security Guardrails (RBAC)
+# This ensures the AI can only touch what it is allowed to
 kubectl apply -f infra/rbac/agent-rbac.yaml
 
-# 3. Seed the failures (Create the "problems" for the AI to fix)
+# 3. Seed the "Chaos" failures
+# This creates pods that are OOMKilled and in CrashLoopBackOff
 kubectl apply -f infra/chaos/failure-seeds.yaml
+
+# 4. Verify the failures exist
+kubectl get pods
+# You should see pods with status 'CrashLoopBackOff' or 'OOMKilled'
 ```
 
-### 3. Agent Installation
-Set up the AI Agent in a Python environment:
+### 3️⃣ Phase 3: Backend (The AI Brain) Setup
+Now, we set up the FastAPI server that controls the LangGraph agent.
 
 ```bash
-# 1. Clone the repo
+# 1. Clone the project
 git clone https://github.com/Ayush-Singh986/GitOps-Driven-Self-Healing-Infrastructure.git
 cd GitOps-Driven-Self-Healing-Infrastructure
 
-# 2. Install dependencies
+# 2. Create a virtual environment and install dependencies
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 
-# 3. Set your OpenAI Key
+# 3. Configure Environment Variables
 export OPENAI_API_KEY='your-api-key-here'
-```
 
-### 4. Running the AI Agent
-Start the agent to detect and fix the seeded failures:
+# 4. Start the Control Plane API
+uvicorn main:app --reload --port 8000
+```
+*The backend is now running at `http://localhost:8000`.*
+
+### 4️⃣ Phase 4: Frontend (The Dark Dashboard) Setup
+The UI is a professional standalone dashboard.
 
 ```bash
-# Run the agent core
-python3 -c "from agent.core.agent import RemediationAgent; agent = RemediationAgent(); print(agent.run('alert-oom-001'))"
+# 1. Open the dashboard in your browser
+# Simply open the file in Chrome or Firefox:
+open frontend/index.html
 ```
+*Note: In a production environment, this would be deployed as a React app via Nginx.*
 
-### 5. Verifying the Fix
-Check the logs to see the agent's decision and check your pods to see them returning to health:
+### 5️⃣ Phase 5: The End-to-End Test (The Demo)
+Follow these steps to see the "Self-Healing" in action:
 
+1.  **Trigger Diagnosis:** 
+    Open your terminal and send a request to the API to diagnose a failure:
+    ```bash
+    curl -X POST "http://localhost:8000/trigger-diagnosis" \
+         -H "Content-Type: application/json" \
+         -d '{"alert_id": "alert-oom-001"}'
+    ```
+2.  **Review in UI:** 
+    Go to the **OmniRoute Dashboard** $\rightarrow$ Look at the **Incident Feed** $\rightarrow$ See the AI's suggested fix.
+3.  **Approve Fix:** 
+    Click **[Approve Fix]** in the UI (or use the API):
+    ```bash
+    curl -X POST "http://localhost:8000/approve-remediation" \
+         -H "Content-Type: application/json" \
+         -d '{"request_id": "PASTE_REQUEST_ID_HERE", "action": "approve"}'
+    ```
+4.  **Verify Healing:**
+    Check your cluster to see the pod returning to health:
+    ```bash
+    kubectl get pods
+    ```
+
+### 6️⃣ Phase 6: Verification & Audit
+To prove the AI acted correctly, check the audit log:
 ```bash
-# Check the audit log
 cat agent_audit.log
-
-# Check pod status
-kubectl get pods
 ```
+This log provides a full JSON trace of: **Alert $\rightarrow$ Context $\rightarrow$ Decision $\rightarrow$ Action**.
 
 ---
 
