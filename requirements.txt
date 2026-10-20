@@ -1,4 +1,6 @@
-# Dependencies for the AI Agent
+# Updated Dependencies for Pro Version
+fastapi==0.110.0
+uvicorn==0.27.1
 langgraph==0.0.39
 langchain==0.1.20
 langchain-openai==0.1.7
@@ -6,3 +8,4 @@ kubernetes==29.0.0
 chromadb==0.4.24
 pydantic==2.6.3
 pyyaml==6.0.1
+python-multipart==0.0.6
