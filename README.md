@@ -1,161 +1,117 @@
-# 🚀 GitOps-Driven Self-Healing Infrastructure
+# 🌐 OmniRoute: Enterprise AIOps Self-Healing Control Plane
 
-An autonomous AI agent for Kubernetes incident detection & remediation (AIOps).
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-324CAC?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![LangGraph](https://img.shields.io/badge/AI-LangGraph-blue?style=for-the-badge)](https://langchain-ai.github.io/langgraph/)
+[![ArgoCD](https://img.shields.io/badge/GitOps-ArgoCD-orange?style=for-the-badge&logo=argocd&logoColor=white)](https://argoproj.github.io/cd/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 
-## 🌟 Project Overview (The "Beginner-Friendly" Explanation)
+## 📖 Executive Summary
+**OmniRoute** is a production-grade AIOps platform designed to eliminate the "3 AM wake-up call" for SREs. It transforms traditional reactive monitoring into an **autonomous self-healing loop**. 
 
-### What is this project?
-Imagine a Kubernetes cluster (the system that runs your apps) as a large city. Sometimes, things break: a building collapses (a Pod crashes), or a road gets blocked (a Disk fills up). Normally, a human engineer (an "On-Call Engineer") gets a phone call at 3 AM, wakes up, logs in, and fixes it.
-
-**This project replaces that 3 AM phone call with an AI Agent.**
-
-### How does it work?
-1.  **The Alarm (Prometheus/Alertmanager):** The system detects a problem (e.g., "App X is crashing") and sends an alarm.
-2.  **The Brain (LangGraph Agent):** The AI agent hears the alarm. It doesn't just guess; it acts like a detective. It looks at the logs, checks the memory usage, and asks, "Why is this happening?"
-3.  **The Library (RAG Runbooks):** The agent looks at a "Runbook"—a manual written by humans that says: *"If the app crashes because of memory, increase the memory limit."*
-4.  **The Safety Guard (Decision):** The agent decides if the fix is **Safe** (e.g., "I'll just give it more memory") or **Risky** (e.g., "I need to delete a database"). 
-    - If it's **Safe**, it fixes it automatically.
-    - If it's **Risky**, it writes a detailed report and asks a human for help.
-5.  **The Robot Hand (ArgoCD/GitOps):** Instead of just "hacking" the system, the agent follows a strict process: it makes a change in the code (Git), and **ArgoCD** safely applies that change to the cluster.
+Unlike simple scripts, OmniRoute implements a **Control Plane** architecture that combines **LLM-driven reasoning (LangGraph)**, **Knowledge Retrieval (RAG)**, and **Immutable Infrastructure (GitOps)** to diagnose and remediate Kubernetes incidents with human-in-the-loop safety guardrails.
 
 ---
 
-## 🛠️ Professional Step-by-Step Setup Guide
+## 🚀 Enterprise Feature Set (Real-World Solutions)
 
-This guide will take you from a blank machine to a fully functioning AIOps Control Plane.
+This project is built to solve specific, high-impact production issues that a Senior DevOps Engineer faces daily:
 
-### 1️⃣ Phase 1: Environment Prerequisites
-Ensure you have the following installed on your machine:
-- **Docker Desktop** (or Docker Engine)
-- **Kind** (`brew install kind`) or **Minikube**
-- **kubectl** (`brew install kubernetes-cli`)
-- **Python 3.10+**
-- **OpenAI API Key** (Get one at [platform.openai.com](https://platform.openai.com))
+### 1️⃣ Autonomous Incident Triage (Solving Alert Fatigue)
+- **The Problem:** On-call engineers receive hundreds of alerts, many of which are noise or recurring.
+- **The Solution:** OmniRoute automatically intercepts alerts and performs the "First Response." It aggregates logs, checks metrics, and classifies the incident *before* a human is notified.
+- **Impact:** Reduces noise and ensures that when a human is paged, they have a full diagnostic report ready.
 
-### 2️⃣ Phase 2: Infrastructure Deployment
-We need to create a "broken" cluster for the AI to heal.
+### 2️⃣ Runbook-Grounded Remediation (Solving AI Hallucinations)
+- **The Problem:** LLMs can suggest dangerous or incorrect commands if left unchecked.
+- **The Solution:** Using **ChromaDB RAG**, the agent is strictly grounded in a library of human-verified runbooks. If a fix isn't in the runbook, the agent flags it as "Risky."
+- **Impact:** Zero-trust AI execution. Only verified, safe procedures are suggested.
 
-```bash
-# 1. Create a local Kubernetes cluster
-kind create cluster --name self-healing-cluster
+### 3️⃣ Immutable GitOps Workflow (Solving Configuration Drift)
+- **The Problem:** Manual `kubectl edit` changes lead to "drift," where the cluster state differs from the Git repo.
+- **The Solution:** The agent **never** modifies the cluster directly. It creates a Git commit $\rightarrow$ triggers **ArgoCD** $\rightarrow$ ArgoCD syncs the cluster.
+- **Impact:** 100% traceability and instant rollback capability for every AI action.
 
-# 2. Install the AI Agent's Security Guardrails (RBAC)
-# This ensures the AI can only touch what it is allowed to
-kubectl apply -f infra/rbac/agent-rbac.yaml
-
-# 3. Seed the "Chaos" failures
-# This creates pods that are OOMKilled and in CrashLoopBackOff
-kubectl apply -f infra/chaos/failure-seeds.yaml
-
-# 4. Verify the failures exist
-kubectl get pods
-# You should see pods with status 'CrashLoopBackOff' or 'OOMKilled'
-```
-
-### 3️⃣ Phase 3: Backend (The AI Brain) Setup
-Now, we set up the FastAPI server that controls the LangGraph agent.
-
-```bash
-# 1. Clone the project
-git clone https://github.com/Ayush-Singh986/GitOps-Driven-Self-Healing-Infrastructure.git
-cd GitOps-Driven-Self-Healing-Infrastructure
-
-# 2. Create a virtual environment and install dependencies
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# 3. Configure Environment Variables
-export OPENAI_API_KEY='your-api-key-here'
-
-# 4. Start the Control Plane API
-uvicorn main:app --reload --port 8000
-```
-*The backend is now running at `http://localhost:8000`.*
-
-### 4️⃣ Phase 4: Frontend (The Dark Dashboard) Setup
-The UI is a professional standalone dashboard.
-
-```bash
-# 1. Open the dashboard in your browser
-# Simply open the file in Chrome or Firefox:
-open frontend/index.html
-```
-*Note: In a production environment, this would be deployed as a React app via Nginx.*
-
-### 5️⃣ Phase 5: The End-to-End Test (The Demo)
-Follow these steps to see the "Self-Healing" in action:
-
-1.  **Trigger Diagnosis:** 
-    Open your terminal and send a request to the API to diagnose a failure:
-    ```bash
-    curl -X POST "http://localhost:8000/trigger-diagnosis" \
-         -H "Content-Type: application/json" \
-         -d '{"alert_id": "alert-oom-001"}'
-    ```
-2.  **Review in UI:** 
-    Go to the **OmniRoute Dashboard** $\rightarrow$ Look at the **Incident Feed** $\rightarrow$ See the AI's suggested fix.
-3.  **Approve Fix:** 
-    Click **[Approve Fix]** in the UI (or use the API):
-    ```bash
-    curl -X POST "http://localhost:8000/approve-remediation" \
-         -H "Content-Type: application/json" \
-         -d '{"request_id": "PASTE_REQUEST_ID_HERE", "action": "approve"}'
-    ```
-4.  **Verify Healing:**
-    Check your cluster to see the pod returning to health:
-    ```bash
-    kubectl get pods
-    ```
-
-### 6️⃣ Phase 6: Verification & Audit
-To prove the AI acted correctly, check the audit log:
-```bash
-cat agent_audit.log
-```
-This log provides a full JSON trace of: **Alert $\rightarrow$ Context $\rightarrow$ Decision $\rightarrow$ Action**.
+### 4️⃣ Human-in-the-Loop (HITL) Control Plane (Solving Production Risk)
+- **The Problem:** Giving an AI "Write" access to production is a massive security risk.
+- **The Solution:** A dedicated **FastAPI-powered Dashboard** where an engineer must explicitly approve an AI's suggested fix.
+- **Impact:** Combines AI speed with human judgment, ensuring no unauthorized changes reach production.
 
 ---
 
-## 📐 Technical Architecture
+## 📐 System Architecture
 
-### 🔹 System Overview
-The system follows a closed-loop control pattern: **Observe $\rightarrow$ Orient $\rightarrow$ Decide $\rightarrow$ Act**.
-
+### 🔹 The AIOps Loop
 ```mermaid
 graph TD
-    A[K8s Cluster] -->|Alerts| B[Prometheus/Alertmanager]
+    A[K8s Cluster] -->|Signal| B[Prometheus/Alertmanager]
     B -->|Trigger| C[FastAPI Control Plane]
     C -->|Invoke| D[LangGraph AI Agent]
-    D -->|Query Context| A
-    D -->|Retrieve Fix| E[(ChromaDB Runbooks)]
-    D -->|Propose Fix| F[Human-in-the-Loop UI]
-    F -->|Approve| G[GitHub Repo]
-    G -->|Sync| H[ArgoCD]
-    H -->|Apply Change| A
-    D -->|Log Action| I[Audit Log]
+    D -->|Fetch Context| A
+    D -->|Query Knowledge| E[(ChromaDB Runbooks)]
+    D -->|Propose Remediation| F[Professional Web UI]
+    F -->|Human Approval| G[GitHub Repo]
+    G -->|Automated Sync| H[ArgoCD]
+    H -->|Heal Infrastructure| A
+    D -->|Log Execution| I[Audit Trail]
 ```
 
-### 🔹 Sequence Flow (How a fix happens)
-```mermaid
-sequenceDiagram
-    participant K as K8s Cluster
-    participant A as AI Agent
-    participant R as RAG Engine
-    participant H as Human Engineer
-    participant G as GitOps/ArgoCD
-
-    K->>A: Trigger Alert (e.g., OOMKilled)
-    A->>K: Fetch Logs & Metrics
-    A->>R: Query matching runbook
-    R-->>A: Return "Increase Memory" fix
-    A->>H: Send "Pending Approval" to UI
-    H->>A: Click [Approve]
-    A->>G: Commit Change to Git
-    G->>K: Sync & Heal Pod
-    A->>A: Log to Audit Trail
-```
+### 🔹 Deployment Topology
+- **Control Plane:** FastAPI + Uvicorn (Running in K8s)
+- **Agent Engine:** LangGraph + OpenAI GPT-4o
+- **Knowledge Layer:** ChromaDB Vector Store
+- **Delivery Layer:** ArgoCD $\rightarrow$ Kubernetes
 
 ---
 
-## 🛠️ Step-by-Step Setup Guide
+## 🎙️ Interviewer's Guide: How to Explain This Project
+
+*When the interviewer asks, "Tell me about this project," use this narrative:*
+
+**1. The "Why" (The Problem):**
+> "In most production environments, SREs suffer from alert fatigue. They get paged for recurring issues like OOMKills or CrashLoops that have known fixes. I built OmniRoute to automate the 'Triage' and 'Remediation' phases of the incident lifecycle."
+
+**2. The "How" (The Technical Approach):**
+> "I implemented a stateful agent using **LangGraph**. When an alert hits the system, the agent doesn't just guess a fix; it performs a multi-step diagnostic: it pulls real-time logs from the cluster, uses **RAG via ChromaDB** to find a matching verified runbook, and then classifies the fix as 'Safe' or 'Risky'."
+
+**3. The "Production Mindset" (The Safety):**
+> "To ensure this is production-ready, I implemented two critical guardrails. First, **Human-in-the-Loop approval** via a custom dashboard, so no change happens without a human eye. Second, a **GitOps workflow using ArgoCD**, ensuring that every single remediation is version-controlled and can be rolled back instantly."
+
+---
+
+## 🚀 Professional Deployment Blueprint
+
+### 1️⃣ Infrastructure Foundation
+```bash
+# Provision Cluster
+kind create cluster --name omniroute-prod
+
+# Apply Security Guardrails (Least Privilege RBAC)
+kubectl apply -f infra/rbac/agent-rbac.yaml
+
+# Seed Production Failure Scenarios
+kubectl apply -f infra/chaos/failure-seeds.yaml
+```
+
+### 2️⃣ Backend Engine Setup
+```bash
+# Setup Environment
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# Initialize Control Plane
+export OPENAI_API_KEY='your-key'
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+### 3️⃣ Dashboard Launch
+```bash
+# Launch the Cyber-Ops UI
+open frontend/index.html
+```
+
+### 4️⃣ End-to-End Validation
+1. **Trigger:** Send alert to API $\rightarrow$ `POST /trigger-diagnosis`
+2. **Triage:** AI Agent fetches logs $\rightarrow$ RAG matches runbook $\rightarrow$ Proposes Fix.
+3. **Approval:** Open Dashboard $\rightarrow$ Review Fix $\rightarrow$ Click **[Approve]**.
+4. **Healing:** ArgoCD syncs Git commit $\rightarrow$ K8s Pod heals.
+5. **Audit:** Review `agent_audit.log` for full traceability.
