@@ -81,7 +81,44 @@ kubectl get pods
 ---
 
 ## 📐 Technical Architecture
-- **Agent Logic:** Built with `LangGraph` to handle the stateful loop of *Diagnose $\rightarrow$ Retrieve $\rightarrow$ Decide $\rightarrow$ Act*.
-- **Memory/RAG:** Uses `ChromaDB` to store and retrieve human-written runbooks.
-- **GitOps Loop:** Uses `ArgoCD` to ensure every change is version-controlled and audited.
-- **Safety:** Implemented via `K8s RBAC`, limiting the agent's power to only "Safe" actions.
+
+### 🔹 System Overview
+The system follows a closed-loop control pattern: **Observe $\rightarrow$ Orient $\rightarrow$ Decide $\rightarrow$ Act**.
+
+```mermaid
+graph TD
+    A[K8s Cluster] -->|Alerts| B[Prometheus/Alertmanager]
+    B -->|Trigger| C[FastAPI Control Plane]
+    C -->|Invoke| D[LangGraph AI Agent]
+    D -->|Query Context| A
+    D -->|Retrieve Fix| E[(ChromaDB Runbooks)]
+    D -->|Propose Fix| F[Human-in-the-Loop UI]
+    F -->|Approve| G[GitHub Repo]
+    G -->|Sync| H[ArgoCD]
+    H -->|Apply Change| A
+    D -->|Log Action| I[Audit Log]
+```
+
+### 🔹 Sequence Flow (How a fix happens)
+```mermaid
+sequenceDiagram
+    participant K as K8s Cluster
+    participant A as AI Agent
+    participant R as RAG Engine
+    participant H as Human Engineer
+    participant G as GitOps/ArgoCD
+
+    K->>A: Trigger Alert (e.g., OOMKilled)
+    A->>K: Fetch Logs & Metrics
+    A->>R: Query matching runbook
+    R-->>A: Return "Increase Memory" fix
+    A->>H: Send "Pending Approval" to UI
+    H->>A: Click [Approve]
+    A->>G: Commit Change to Git
+    G->>K: Sync & Heal Pod
+    A->>A: Log to Audit Trail
+```
+
+---
+
+## 🛠️ Step-by-Step Setup Guide
